@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Sound Vault</title>
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --amber:     #f59e0b;
+      --gold:      #d97706;
+      --gold-dim:  #92400e;
+      --bg:        #0d0a06;
+      --bg-card:   #1a1208;
+      --bg-card2:  #120e05;
+      --text:      #fde68a;
+      --text-dim:  #a16207;
+      --border:    #78350f;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0 1.5rem 4rem;
+    }
+
+    /* scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.18) 3px,
+        rgba(0,0,0,0.18) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────────── */
+    header {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3.5rem 0 2rem;
+      text-align: center;
+      border-bottom: 2px solid var(--border);
+      position: relative;
+    }
+
+    header::after {
+      content: '';
+      display: block;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--amber), transparent);
+      margin-top: 2px;
+    }
+
+    .site-title {
+      font-family: 'Russo One', sans-serif;
+      font-size: clamp(2.4rem, 8vw, 4.5rem);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fde68a 0%, #f59e0b 40%, #d97706 70%, #92400e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 18px rgba(245,158,11,0.45));
+      line-height: 1.1;
+    }
+
+    .site-tagline {
+      margin-top: 0.75rem;
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+    }
+
+    /* ── MAIN LAYOUT ────────────────────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    section {
+      margin-top: 3.5rem;
+    }
+
+    .section-heading {
+      font-family: 'Russo One', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-heading::before {
+      content: '//';
+      color: var(--gold-dim);
+      font-size: 0.95rem;
+    }
+
+    .section-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    /* ── ARTIST CARDS ───────────────────────────────────────── */
+    .artists-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .artist-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--gold);
+      padding: 1.5rem 1.25rem 1.25rem;
+      position: relative;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .artist-card:hover {
+      border-color: var(--amber);
+      box-shadow: 0 0 22px rgba(245,158,11,0.18), inset 0 0 12px rgba(245,158,11,0.04);
+    }
+
+    .artist-rank {
+      font-family: 'Russo One', sans-serif;
+      font-size: 2.8rem;
+      color: var(--border);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+      user-select: none;
+    }
+
+    .artist-name {
+      font-family: 'Russo One', sans-serif;
+      font-size: 1.15rem;
+      color: var(--amber);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .artist-genre {
+      margin-top: 0.35rem;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .artist-desc {
+      margin-top: 0.8rem;
+      font-size: 0.78rem;
+      color: #c49a2a;
+      font-style: italic;
+    }
+
+    /* ── SONG TABLE ─────────────────────────────────────────── */
+    .songs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .songs-table thead tr {
+      border-bottom: 2px solid var(--border);
+    }
+
+    .songs-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      color: var(--text-dim);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-size: 0.68rem;
+    }
+
+    .songs-table th:first-child {
+      width: 2.5rem;
+      text-align: center;
+    }
+
+    .songs-table tbody tr {
+      border-bottom: 1px solid rgba(120,53,15,0.35);
+      transition: background 0.15s;
+    }
+
+    .songs-table tbody tr:hover {
+      background: rgba(245,158,11,0.06);
+    }
+
+    .songs-table td {
+      padding: 0.9rem 0.75rem;
+      vertical-align: middle;
+    }
+
+    .track-num {
+      text-align: center;
+      color: var(--border);
+      font-size: 0.7rem;
+    }
+
+    .track-title {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .track-artist {
+      color: var(--amber);
+    }
+
+    .track-year {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .play-icon {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 5px 0 5px 9px;
+      border-color: transparent transparent transparent var(--gold);
+      margin-right: 0.5rem;
+      vertical-align: middle;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .songs-table tbody tr:hover .play-icon {
+      opacity: 1;
+    }
+
+    /* ── FOOTER ─────────────────────────────────────────────── */
+    footer {
+      max-width: 860px;
+      margin: 4rem auto 0;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 class="site-title">My Sound Vault</h1>
+    <p class="site-tagline">[ a carefully curated archive of sonic obsessions ]</p>
+  </header>
+
+  <main>
+
+    <!-- ── FAVORITE ARTISTS ── -->
+    <section>
+      <h2 class="section-heading">Favorite Artists</h2>
+      <div class="artists-grid">
+
+        <div class="artist-card">
+          <div class="artist-rank">01</div>
+          <div class="artist-name">Boards of Canada</div>
+          <div class="artist-genre">IDM &bull; Ambient</div>
+          <p class="artist-desc">"Warm analog textures that feel like half-remembered childhood summers."</p>
+        </div>
+
+        <div class="artist-card">
+          <div class="artist-rank">02</div>
+          <div class="artist-name">Portishead</div>
+          <div class="artist-genre">Trip-Hop &bull; Electronic</div>
+          <p class="artist-desc">"Cinematic dread wrapped in crackling vinyl and mournful vocals."</p>
+        </div>
+
+        <div class="artist-card">
+          <div class="artist-rank">03</div>
+          <div class="artist-name">Aphex Twin</div>
+          <div class="artist-genre">Ambient &bull; Techno</div>
+          <p class="artist-desc">"From lullabies to machine nightmares — and somehow both at once."</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── FAVORITE SONGS ── -->
+    <section>
+      <h2 class="section-heading">Favorite Songs</h2>
+      <table class="songs-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Artist</th>
+            <th>Year</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="track-num">01</td>
+            <td class="track-title"><span class="play-icon"></span>Roygbiv</td>
+            <td class="track-artist">Boards of Canada</td>
+            <td class="track-year">1998</td>
+          </tr>
+          <tr>
+            <td class="track-num">02</td>
+            <td class="track-title"><span class="play-icon"></span>Sour Times</td>
+            <td class="track-artist">Portishead</td>
+            <td class="track-year">1994</td>
+          </tr>
+          <tr>
+            <td class="track-num">03</td>
+            <td class="track-title"><span class="play-icon"></span>Avril 14th</td>
+            <td class="track-artist">Aphex Twin</td>
+            <td class="track-year">2001</td>
+          </tr>
+          <tr>
+            <td class="track-num">04</td>
+            <td class="track-title"><span class="play-icon"></span>Olson</td>
+            <td class="track-artist">Boards of Canada</td>
+            <td class="track-year">2002</td>
+          </tr>
+          <tr>
+            <td class="track-num">05</td>
+            <td class="track-title"><span class="play-icon"></span>Glory Box</td>
+            <td class="track-artist">Portishead</td>
+            <td class="track-year">1994</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; 2026 &mdash; My Sound Vault &mdash; Built with static HTML &amp; good taste
+  </footer>
+
+</body>
+</html>
