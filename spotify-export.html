@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sound Vault — Spotify Export</title>
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --amber:     #f59e0b;
+      --gold:      #d97706;
+      --gold-dim:  #92400e;
+      --bg:        #0d0a06;
+      --bg-card:   #1a1208;
+      --bg-card2:  #120e05;
+      --text:      #fde68a;
+      --text-dim:  #a16207;
+      --border:    #78350f;
+      --green:     #4ade80;
+      --red:       #f87171;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0 1.5rem 4rem;
+    }
+
+    /* scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.18) 3px,
+        rgba(0,0,0,0.18) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    header {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3.5rem 0 2rem;
+      text-align: center;
+      border-bottom: 2px solid var(--border);
+    }
+
+    header::after {
+      content: '';
+      display: block;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--amber), transparent);
+      margin-top: 2px;
+    }
+
+    .site-title {
+      font-family: 'Russo One', sans-serif;
+      font-size: clamp(1.8rem, 6vw, 3rem);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fde68a 0%, #f59e0b 40%, #d97706 70%, #92400e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 18px rgba(245,158,11,0.45));
+      line-height: 1.1;
+    }
+
+    .site-tagline {
+      margin-top: 0.75rem;
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 1rem;
+      color: var(--text-dim);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .back-link:hover { color: var(--amber); }
+
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    section { margin-top: 3rem; }
+
+    .section-heading {
+      font-family: 'Russo One', sans-serif;
+      font-size: 1.15rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-heading::before {
+      content: '//';
+      color: var(--gold-dim);
+      font-size: 0.95rem;
+    }
+
+    .section-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--gold);
+      padding: 1.5rem 1.5rem 1.4rem;
+    }
+
+    .panel p { margin-bottom: 0.9rem; }
+    .panel p:last-child { margin-bottom: 0; }
+
+    .panel ol {
+      margin: 0 0 1rem 1.4rem;
+    }
+
+    .panel li { margin-bottom: 0.45rem; }
+
+    .panel a { color: var(--amber); }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    code, .mono-box {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      padding: 0.1rem 0.4rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--amber);
+      word-break: break-all;
+    }
+
+    .field-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 240px;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      padding: 0.6rem 0.8rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus { border-color: var(--amber); }
+
+    button {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--amber);
+      font-family: 'Russo One', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.4rem;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    button:hover:not(:disabled) {
+      background: rgba(245,158,11,0.1);
+      box-shadow: 0 0 18px rgba(245,158,11,0.25);
+    }
+
+    button:disabled {
+      border-color: var(--gold-dim);
+      color: var(--gold-dim);
+      cursor: not-allowed;
+    }
+
+    button.small {
+      font-size: 0.68rem;
+      padding: 0.45rem 0.9rem;
+    }
+
+    /* status log */
+    #log {
+      margin-top: 1.1rem;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      padding: 0.9rem 1rem;
+      font-size: 0.75rem;
+      max-height: 260px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #log div { white-space: pre-wrap; }
+    #log .ok    { color: var(--green); }
+    #log .err   { color: var(--red); }
+    #log .info  { color: var(--text-dim); }
+
+    /* results */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Russo One', sans-serif;
+      font-size: 1.9rem;
+      color: var(--amber);
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 0.66rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-top: 0.3rem;
+    }
+
+    .downloads {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    footer {
+      max-width: 860px;
+      margin: 4rem auto 0;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 class="site-title">Spotify Vault Export</h1>
+    <p class="site-tagline">[ back up your artists, songs &amp; playlists — outside spotify ]</p>
+    <a class="back-link" href="index.html">&larr; back to the vault</a>
+  </header>
+
+  <main>
+
+    <!-- ── STEP 1: SETUP ── -->
+    <section id="setup-section">
+      <h2 class="section-heading">Step 1 — One-Time Setup</h2>
+      <div class="panel">
+        <p>This tool talks directly to the official Spotify Web API from your browser. Nothing is sent
+           anywhere else — your data goes straight from Spotify to files on your computer. You just need
+           a free Spotify "app" to get a Client ID:</p>
+        <ol>
+          <li>Open the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify Developer Dashboard</a> and log in with your normal Spotify account.</li>
+          <li>Click <strong>Create app</strong>. Name it anything (e.g. "Sound Vault Export").</li>
+          <li>Under <strong>Redirect URIs</strong>, add exactly: <code id="redirect-uri-display"></code></li>
+          <li>Under <strong>APIs used</strong>, tick <strong>Web API</strong>, save, and copy the <strong>Client ID</strong> from the app's settings page.</li>
+        </ol>
+        <p class="hint">You only do this once — the Client ID is remembered in this browser.</p>
+        <div id="file-warning" class="hidden">
+          <p class="hint" style="color: var(--red); margin-top: 0.8rem;">
+            &#9888; You opened this file directly from disk (file://). Spotify login can't redirect back here.
+            Serve the folder locally instead, e.g. run <code>python3 -m http.server 8000</code> in the site folder
+            and open <code>http://127.0.0.1:8000/spotify-export.html</code>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── STEP 2: CONNECT ── -->
+    <section id="connect-section">
+      <h2 class="section-heading">Step 2 — Connect to Spotify</h2>
+      <div class="panel">
+        <p>Paste your Client ID and connect. Spotify will ask you to approve <em>read-only</em> access to
+           your library, playlists, followed artists and top items.</p>
+        <div class="field-row">
+          <input type="text" id="client-id" placeholder="Spotify Client ID" autocomplete="off" spellcheck="false" />
+          <button id="connect-btn">Connect</button>
+        </div>
+        <p class="hint" id="auth-status" style="margin-top: 0.8rem;"></p>
+      </div>
+    </section>
+
+    <!-- ── STEP 3: EXPORT ── -->
+    <section id="export-section">
+      <h2 class="section-heading">Step 3 — Export Everything</h2>
+      <div class="panel">
+        <p>Grabs your followed artists, liked songs, saved albums, every playlist (with all tracks),
+           and your top artists &amp; tracks. Large libraries can take a couple of minutes — Spotify
+           pages data 50 items at a time.</p>
+        <div class="field-row">
+          <button id="export-btn" disabled>Start Export</button>
+        </div>
+        <div id="log"></div>
+      </div>
+    </section>
+
+    <!-- ── STEP 4: DOWNLOADS ── -->
+    <section id="results-section" class="hidden">
+      <h2 class="section-heading">Step 4 — Your Records</h2>
+      <div class="panel">
+        <div class="stats-grid" id="stats-grid"></div>
+        <p>Download your archive. The JSON file is the complete record (best for re-importing or
+           long-term keeping); the CSVs open in any spreadsheet app.</p>
+        <div class="downloads">
+          <button class="small" data-dl="json">&#8681; Full Archive (JSON)</button>
+          <button class="small" data-dl="liked">&#8681; Liked Songs (CSV)</button>
+          <button class="small" data-dl="artists">&#8681; Followed Artists (CSV)</button>
+          <button class="small" data-dl="playlists">&#8681; Playlist Tracks (CSV)</button>
+          <button class="small" data-dl="albums">&#8681; Saved Albums (CSV)</button>
+          <button class="small" data-dl="top">&#8681; Top Artists &amp; Tracks (CSV)</button>
+        </div>
+        <p class="hint" style="margin-top: 1rem;">
+          Tip: Spotify's API doesn't expose your full multi-year listening history — for that, also request
+          your "Extended streaming history" once from
+          <a href="https://www.spotify.com/account/privacy/" target="_blank" rel="noopener">spotify.com/account/privacy</a>
+          (takes up to 30 days, arrives by email). This tool covers everything you've liked, followed and playlisted.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    &copy; 2026 &mdash; My Sound Vault &mdash; your music, your records
+  </footer>
+
+  <script>
+    'use strict';
+
+    const SCOPES = 'user-library-read user-follow-read playlist-read-private playlist-read-collaborative user-top-read';
+    const REDIRECT_URI = location.origin + location.pathname;
+    const API_BASE = 'https://api.spotify.com/v1';
+
+    const $ = (id) => document.getElementById(id);
+    const logEl = $('log');
+
+    let exportData = null;
+
+    // ── UI helpers ─────────────────────────────────────────────
+    function log(msg, cls = 'info') {
+      logEl.style.display = 'block';
+      const line = document.createElement('div');
+      line.className = cls;
+      line.textContent = msg;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function setAuthStatus(msg, ok) {
+      const el = $('auth-status');
+      el.textContent = msg;
+      el.style.color = ok ? 'var(--green)' : 'var(--text-dim)';
+    }
+
+    // ── PKCE helpers ───────────────────────────────────────────
+    function randomString(length) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      const values = crypto.getRandomValues(new Uint8Array(length));
+      return Array.from(values, (v) => chars[v % chars.length]).join('');
+    }
+
+    async function pkceChallenge(verifier) {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+      return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    // ── Auth flow ──────────────────────────────────────────────
+    function getToken() {
+      const token = sessionStorage.getItem('sv_token');
+      const expires = Number(sessionStorage.getItem('sv_token_expires') || 0);
+      return token && Date.now() < expires ? token : null;
+    }
+
+    async function startLogin() {
+      const clientId = $('client-id').value.trim();
+      if (!clientId) {
+        setAuthStatus('Enter your Client ID first.', false);
+        return;
+      }
+      localStorage.setItem('sv_client_id', clientId);
+
+      const verifier = randomString(64);
+      sessionStorage.setItem('sv_verifier', verifier);
+      const challenge = await pkceChallenge(verifier);
+
+      const params = new URLSearchParams({
+        client_id: clientId,
+        response_type: 'code',
+        redirect_uri: REDIRECT_URI,
+        scope: SCOPES,
+        code_challenge_method: 'S256',
+        code_challenge: challenge,
+      });
+      location.href = 'https://accounts.spotify.com/authorize?' + params.toString();
+    }
+
+    async function handleRedirectCallback() {
+      const params = new URLSearchParams(location.search);
+      const code = params.get('code');
+      const error = params.get('error');
+      if (error) {
+        history.replaceState({}, '', location.pathname);
+        setAuthStatus('Spotify authorization was denied (' + error + '). Try again.', false);
+        return;
+      }
+      if (!code) return;
+
+      history.replaceState({}, '', location.pathname);
+      const verifier = sessionStorage.getItem('sv_verifier');
+      const clientId = localStorage.getItem('sv_client_id');
+      if (!verifier || !clientId) {
+        setAuthStatus('Login state was lost — click Connect again.', false);
+        return;
+      }
+
+      try {
+        const res = await fetch('https://accounts.spotify.com/api/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: REDIRECT_URI,
+            client_id: clientId,
+            code_verifier: verifier,
+          }),
+        });
+        if (!res.ok) throw new Error('Token exchange failed (HTTP ' + res.status + ')');
+        const json = await res.json();
+        sessionStorage.setItem('sv_token', json.access_token);
+        sessionStorage.setItem('sv_token_expires', String(Date.now() + (json.expires_in - 60) * 1000));
+        onConnected();
+      } catch (e) {
+        setAuthStatus('Could not complete login: ' + e.message, false);
+      }
+    }
+
+    function onConnected() {
+      setAuthStatus('Connected to Spotify. Ready to export.', true);
+      $('export-btn').disabled = false;
+      $('connect-btn').textContent = 'Reconnect';
+    }
+
+    // ── Spotify API with pagination + rate-limit handling ──────
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    async function api(url) {
+      for (;;) {
+        const res = await fetch(url.startsWith('http') ? url : API_BASE + url, {
+          headers: { Authorization: 'Bearer ' + getToken() },
+        });
+        if (res.status === 429) {
+          const wait = (Number(res.headers.get('Retry-After')) || 2) + 1;
+          log('Rate limited by Spotify — waiting ' + wait + 's…');
+          await sleep(wait * 1000);
+          continue;
+        }
+        if (res.status === 401) throw new Error('Session expired — click Connect and try again.');
+        if (!res.ok) throw new Error('Spotify API error ' + res.status + ' for ' + url);
+        return res.json();
+      }
+    }
+
+    // Offset-paginated endpoints (liked songs, playlists, albums, playlist tracks)
+    async function fetchAllPages(firstUrl, label) {
+      const items = [];
+      let url = firstUrl;
+      while (url) {
+        const page = await api(url);
+        items.push(...page.items.filter(Boolean));
+        if (label) log('  ' + label + ': ' + items.length + (page.total ? ' / ' + page.total : ''));
+        url = page.next;
+      }
+      return items;
+    }
+
+    // Cursor-paginated followed-artists endpoint
+    async function fetchFollowedArtists() {
+      const items = [];
+      let url = '/me/following?type=artist&limit=50';
+      while (url) {
+        const page = (await api(url)).artists;
+        items.push(...page.items);
+        log('  followed artists: ' + items.length + (page.total ? ' / ' + page.total : ''));
+        url = page.cursors && page.cursors.after
+          ? '/me/following?type=artist&limit=50&after=' + page.cursors.after
+          : null;
+      }
+      return items;
+    }
+
+    // ── Slimming helpers (keep exports readable & compact) ─────
+    const slimArtist = (a) => ({
+      name: a.name,
+      genres: a.genres || [],
+      followers: a.followers ? a.followers.total : null,
+      popularity: a.popularity ?? null,
+      spotify_url: a.external_urls ? a.external_urls.spotify : null,
+      id: a.id,
+    });
+
+    const slimTrack = (t) => ({
+      title: t.name,
+      artists: (t.artists || []).map((a) => a.name),
+      album: t.album ? t.album.name : null,
+      release_date: t.album ? t.album.release_date : null,
+      duration_ms: t.duration_ms,
+      isrc: t.external_ids && t.external_ids.isrc ? t.external_ids.isrc : null,
+      spotify_url: t.external_urls ? t.external_urls.spotify : null,
+      id: t.id,
+    });
+
+    const slimAlbum = (a) => ({
+      title: a.name,
+      artists: (a.artists || []).map((x) => x.name),
+      release_date: a.release_date,
+      total_tracks: a.total_tracks,
+      spotify_url: a.external_urls ? a.external_urls.spotify : null,
+      id: a.id,
+    });
+
+    // ── The export itself ──────────────────────────────────────
+    async function runExport() {
+      const btn = $('export-btn');
+      btn.disabled = true;
+      logEl.innerHTML = '';
+      $('results-section').classList.add('hidden');
+
+      try {
+        log('Fetching your profile…');
+        const me = await api('/me');
+        log('Hello, ' + (me.display_name || me.id) + '!', 'ok');
+
+        log('Fetching followed artists…');
+        const artists = (await fetchFollowedArtists()).map(slimArtist);
+
+        log('Fetching liked songs…');
+        const liked = (await fetchAllPages('/me/tracks?limit=50', 'liked songs'))
+          .filter((i) => i.track)
+          .map((i) => ({ liked_at: i.added_at, ...slimTrack(i.track) }));
+
+        log('Fetching saved albums…');
+        const albums = (await fetchAllPages('/me/albums?limit=50', 'saved albums'))
+          .filter((i) => i.album)
+          .map((i) => ({ saved_at: i.added_at, ...slimAlbum(i.album) }));
+
+        log('Fetching playlists…');
+        const playlistStubs = await fetchAllPages('/me/playlists?limit=50', 'playlists');
+        const playlists = [];
+        for (const pl of playlistStubs) {
+          log('  loading tracks: "' + pl.name + '" (' + pl.tracks.total + ' tracks)');
+          const tracks = (await fetchAllPages('/playlists/' + pl.id + '/tracks?limit=100'))
+            .filter((i) => i.track && i.track.type === 'track')
+            .map((i) => ({ added_at: i.added_at, ...slimTrack(i.track) }));
+          playlists.push({
+            name: pl.name,
+            description: pl.description || '',
+            owner: pl.owner ? pl.owner.display_name : null,
+            is_own: me.id && pl.owner && pl.owner.id === me.id,
+            public: pl.public,
+            collaborative: pl.collaborative,
+            spotify_url: pl.external_urls ? pl.external_urls.spotify : null,
+            id: pl.id,
+            tracks,
+          });
+        }
+
+        log('Fetching top artists & tracks…');
+        const top = {};
+        for (const range of ['short_term', 'medium_term', 'long_term']) {
+          top[range] = {
+            artists: (await api('/me/top/artists?limit=50&time_range=' + range)).items.map(slimArtist),
+            tracks: (await api('/me/top/tracks?limit=50&time_range=' + range)).items.map(slimTrack),
+          };
+        }
+
+        exportData = {
+          exported_at: new Date().toISOString(),
+          exported_with: 'Sound Vault Spotify Export',
+          user: { id: me.id, display_name: me.display_name, country: me.country },
+          followed_artists: artists,
+          liked_songs: liked,
+          saved_albums: albums,
+          playlists,
+          top,
+        };
+
+        const playlistTrackCount = playlists.reduce((n, p) => n + p.tracks.length, 0);
+        showStats([
+          [artists.length, 'Artists Followed'],
+          [liked.length, 'Liked Songs'],
+          [playlists.length, 'Playlists'],
+          [playlistTrackCount, 'Playlist Tracks'],
+          [albums.length, 'Saved Albums'],
+        ]);
+        log('Done! Your archive is ready below.', 'ok');
+        $('results-section').classList.remove('hidden');
+        $('results-section').scrollIntoView({ behavior: 'smooth' });
+      } catch (e) {
+        log('Export failed: ' + e.message, 'err');
+      } finally {
+        btn.disabled = !getToken();
+      }
+    }
+
+    function showStats(pairs) {
+      $('stats-grid').innerHTML = pairs
+        .map(([num, label]) =>
+          '<div class="stat-card"><div class="stat-num">' + num +
+          '</div><div class="stat-label">' + label + '</div></div>')
+        .join('');
+    }
+
+    // ── File downloads ─────────────────────────────────────────
+    function downloadFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function csv(rows) {
+      const esc = (v) => {
+        const s = v == null ? '' : String(v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+      return rows.map((r) => r.map(esc).join(',')).join('\n');
+    }
+
+    const today = () => new Date().toISOString().slice(0, 10);
+
+    const downloads = {
+      json: () => downloadFile('spotify-vault-' + today() + '.json',
+        JSON.stringify(exportData, null, 2), 'application/json'),
+
+      liked: () => downloadFile('liked-songs-' + today() + '.csv', csv([
+        ['Title', 'Artists', 'Album', 'Release Date', 'Liked At', 'Spotify URL'],
+        ...exportData.liked_songs.map((t) =>
+          [t.title, t.artists.join('; '), t.album, t.release_date, t.liked_at, t.spotify_url]),
+      ]), 'text/csv'),
+
+      artists: () => downloadFile('followed-artists-' + today() + '.csv', csv([
+        ['Name', 'Genres', 'Followers', 'Spotify URL'],
+        ...exportData.followed_artists.map((a) =>
+          [a.name, a.genres.join('; '), a.followers, a.spotify_url]),
+      ]), 'text/csv'),
+
+      playlists: () => downloadFile('playlist-tracks-' + today() + '.csv', csv([
+        ['Playlist', 'Title', 'Artists', 'Album', 'Added At', 'Spotify URL'],
+        ...exportData.playlists.flatMap((p) => p.tracks.map((t) =>
+          [p.name, t.title, t.artists.join('; '), t.album, t.added_at, t.spotify_url])),
+      ]), 'text/csv'),
+
+      albums: () => downloadFile('saved-albums-' + today() + '.csv', csv([
+        ['Title', 'Artists', 'Release Date', 'Saved At', 'Spotify URL'],
+        ...exportData.saved_albums.map((a) =>
+          [a.title, a.artists.join('; '), a.release_date, a.saved_at, a.spotify_url]),
+      ]), 'text/csv'),
+
+      top: () => downloadFile('top-artists-and-tracks-' + today() + '.csv', csv([
+        ['Time Range', 'Rank', 'Type', 'Name', 'Artists', 'Spotify URL'],
+        ...['short_term', 'medium_term', 'long_term'].flatMap((range) => [
+          ...exportData.top[range].artists.map((a, i) =>
+            [range, i + 1, 'artist', a.name, '', a.spotify_url]),
+          ...exportData.top[range].tracks.map((t, i) =>
+            [range, i + 1, 'track', t.title, t.artists.join('; '), t.spotify_url]),
+        ]),
+      ]), 'text/csv'),
+    };
+
+    // ── Wire up ────────────────────────────────────────────────
+    $('redirect-uri-display').textContent = REDIRECT_URI;
+    if (location.protocol === 'file:') $('file-warning').classList.remove('hidden');
+
+    const savedClientId = localStorage.getItem('sv_client_id');
+    if (savedClientId) $('client-id').value = savedClientId;
+
+    $('connect-btn').addEventListener('click', startLogin);
+    $('export-btn').addEventListener('click', runExport);
+    document.querySelectorAll('[data-dl]').forEach((btn) =>
+      btn.addEventListener('click', () => exportData && downloads[btn.dataset.dl]()));
+
+    if (getToken()) onConnected();
+    else handleRedirectCallback();
+  </script>
+</body>
+</html>

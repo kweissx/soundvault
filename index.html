@@ -68,6 +68,25 @@
       margin-top: 2px;
     }
 
+    .header-link {
+      display: inline-block;
+      margin-top: 1.1rem;
+      padding: 0.45rem 1.1rem;
+      border: 1px solid var(--gold);
+      color: var(--amber);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .header-link:hover {
+      background: rgba(245,158,11,0.1);
+      box-shadow: 0 0 18px rgba(245,158,11,0.25);
+    }
+
     .site-title {
       font-family: 'Russo One', sans-serif;
       font-size: clamp(2.4rem, 8vw, 4.5rem);
@@ -276,6 +295,7 @@
   <header>
     <h1 class="site-title">My Sound Vault</h1>
     <p class="site-tagline">[ a carefully curated archive of sonic obsessions ]</p>
+    <a class="header-link" href="spotify-export.html">&#8681; Back up my Spotify library</a>
   </header>
 
   <main>
